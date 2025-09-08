@@ -1,0 +1,78 @@
+-- PlanetScale-compatible schema (no FK constraints; enforce in app)
+
+CREATE TABLE IF NOT EXISTS users (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  username VARCHAR(50) NOT NULL UNIQUE,
+  email VARCHAR(255) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  email_verified BOOLEAN NOT NULL DEFAULT FALSE,
+  avatar VARCHAR(255) NULL,
+  roles VARCHAR(255) NOT NULL DEFAULT 'user',
+  status VARCHAR(32) NOT NULL DEFAULT 'active',
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
+);
+
+CREATE TABLE IF NOT EXISTS verification_tokens (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT NOT NULL,
+  token VARCHAR(255) NOT NULL UNIQUE,
+  expires_at TIMESTAMP(6) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS channels (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  slug VARCHAR(100) NOT NULL UNIQUE,
+  name VARCHAR(255) NOT NULL,
+  visibility VARCHAR(32) NOT NULL DEFAULT 'public'
+);
+
+CREATE TABLE IF NOT EXISTS threads (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  channel_id BIGINT NOT NULL,
+  author_id BIGINT NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  updated_at TIMESTAMP(6) NULL
+);
+
+CREATE TABLE IF NOT EXISTS posts (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  thread_id BIGINT NOT NULL,
+  author_id BIGINT NOT NULL,
+  content MEDIUMTEXT NOT NULL,
+  reply_to_post_id BIGINT NULL,
+  is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  updated_at TIMESTAMP(6) NULL
+);
+
+CREATE TABLE IF NOT EXISTS mentions (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  post_id BIGINT NOT NULL,
+  mentioned_user_id BIGINT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT NOT NULL,
+  type VARCHAR(32) NOT NULL,
+  ref_id BIGINT NULL,
+  read_at TIMESTAMP(6) NULL,
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
+);
+
+CREATE TABLE IF NOT EXISTS moderation_actions (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  target_user_id BIGINT NOT NULL,
+  action VARCHAR(32) NOT NULL,
+  reason VARCHAR(255) NULL,
+  operator_id BIGINT NOT NULL,
+  expires_at TIMESTAMP(6) NULL,
+  created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
+);
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_posts_thread_created ON posts(thread_id, created_at);
+CREATE FULLTEXT INDEX IF NOT EXISTS ft_posts_content ON posts(content);
+CREATE FULLTEXT INDEX IF NOT EXISTS ft_threads_title ON threads(title);
+
